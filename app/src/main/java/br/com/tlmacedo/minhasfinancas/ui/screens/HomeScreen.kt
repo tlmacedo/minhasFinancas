@@ -47,111 +47,109 @@ fun HomeScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     
-    Scaffold(
-        containerColor = MaterialTheme.colorScheme.background
-    ) { paddingValues ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
-            contentPadding = PaddingValues(bottom = 24.dp)
-        ) {
-            // Header com saudação
-            item {
-                HeaderSection(
-                    userName = uiState.currentUser?.nome?.split(" ")?.firstOrNull(),
-                    userPhotoUri = uiState.currentUser?.fotoPerfilUri
-                )
-            }
-            
-            // Card de saldo principal
-            item {
-                BalanceCard(
-                    saldoTotal = uiState.saldoTotal,
-                    receitasMes = uiState.receitasMes,
-                    despesasMes = uiState.despesasMes
-                )
-            }
-            
-            // Ações rápidas
-            item {
-                QuickActionsSection(
-                    onNavigateToContas = onNavigateToContas,
-                    onNavigateToEventos = onNavigateToEventos,
-                    onNavigateToCategorias = onNavigateToCategorias,
-                    onNavigateToRelatorios = onNavigateToRelatorios,
-                    onNavigateToConfiguracoes = onNavigateToConfiguracoes
-                )
-            }
-            
-            // Minhas Contas
-            item {
-                SectionHeader(
-                    title = "Minhas Contas",
-                    actionText = "Ver todas",
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .systemBarsPadding(), // Garante o espaçamento das barras do sistema
+        contentPadding = PaddingValues(bottom = 24.dp)
+    ) {
+        // Header com saudação
+        item {
+            HeaderSection(
+                userName = uiState.currentUser?.nome?.split(" ")?.firstOrNull(),
+                userPhotoUri = uiState.currentUser?.fotoPerfilUri,
+                onSettingsClick = onNavigateToConfiguracoes
+            )
+        }
+        
+        // Card de saldo principal
+        item {
+            BalanceCard(
+                saldoTotal = uiState.saldoTotal,
+                receitasMes = uiState.receitasMes,
+                despesasMes = uiState.despesasMes
+            )
+        }
+        
+        // Ações rápidas
+        item {
+            QuickActionsSection(
+                onNavigateToContas = onNavigateToContas,
+                onNavigateToEventos = onNavigateToEventos,
+                onNavigateToCategorias = onNavigateToCategorias,
+                onNavigateToRelatorios = onNavigateToRelatorios,
+                onNavigateToConfiguracoes = onNavigateToConfiguracoes
+            )
+        }
+        
+        // Minhas Contas
+        item {
+            SectionHeader(
+                title = "Minhas Contas",
+                actionText = "Ver todas",
+                onActionClick = onNavigateToContas
+            )
+        }
+        
+        item {
+            if (uiState.contas.isEmpty()) {
+                EmptyStateCard(
+                    icon = Icons.Outlined.AccountBalance,
+                    message = "Nenhuma conta cadastrada",
+                    actionText = "Adicionar conta",
                     onActionClick = onNavigateToContas
                 )
-            }
-            
-            item {
-                if (uiState.contas.isEmpty()) {
-                    EmptyStateCard(
-                        icon = Icons.Outlined.AccountBalance,
-                        message = "Nenhuma conta cadastrada",
-                        actionText = "Adicionar conta",
-                        onActionClick = onNavigateToContas
-                    )
-                } else {
-                    LazyRow(
-                        contentPadding = PaddingValues(horizontal = 20.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        items(uiState.contas.take(5)) { contaComTipo ->
-                            MiniContaCard(
-                                nome = contaComTipo.conta.nome,
-                                saldo = contaComTipo.conta.saldoAtual,
-                                icone = contaComTipo.conta.icone,
-                                cor = contaComTipo.conta.cor,
-                                onClick = onNavigateToContas
-                            )
-                        }
+            } else {
+                LazyRow(
+                    contentPadding = PaddingValues(horizontal = 20.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(uiState.contas.take(5)) { contaComTipo ->
+                        MiniContaCard(
+                            nome = contaComTipo.conta.nome,
+                            saldo = contaComTipo.conta.saldoAtual,
+                            icone = contaComTipo.conta.icone,
+                            cor = contaComTipo.conta.cor,
+                            onClick = onNavigateToContas
+                        )
                     }
                 }
             }
-            
-            // Últimas transações
+        }
+        
+        // Últimas transações
+        item {
+            SectionHeader(
+                title = "Últimas Transações",
+                actionText = "Ver todas",
+                onActionClick = onNavigateToEventos
+            )
+        }
+        
+        if (uiState.ultimosEventos.isEmpty()) {
             item {
-                SectionHeader(
-                    title = "Últimas Transações",
-                    actionText = "Ver todas",
+                EmptyStateCard(
+                    icon = Icons.Outlined.Receipt,
+                    message = "Nenhuma transação registrada",
+                    actionText = "Adicionar transação",
                     onActionClick = onNavigateToEventos
                 )
             }
-            
-            if (uiState.ultimosEventos.isEmpty()) {
-                item {
-                    EmptyStateCard(
-                        icon = Icons.Outlined.Receipt,
-                        message = "Nenhuma transação registrada",
-                        actionText = "Adicionar transação",
-                        onActionClick = onNavigateToEventos
-                    )
-                }
-            } else {
-                items(uiState.ultimosEventos.take(5)) { evento ->
-                    TransacaoItem(
-                        descricao = evento.evento.descricao,
-                        valor = evento.evento.valor,
-                        tipo = evento.evento.tipo,
-                        categoria = evento.categoria?.nome ?: "Sem categoria",
-                        conta = evento.conta.nome
-                    )
-                }
+        } else {
+            items(uiState.ultimosEventos.take(5)) { evento ->
+                TransacaoItem(
+                    descricao = evento.evento.descricao,
+                    valor = evento.evento.valor,
+                    tipo = evento.evento.tipo,
+                    categoria = evento.categoria?.nome ?: "Sem categoria",
+                    conta = evento.conta.nome
+                )
             }
-            
-            item {
-                Spacer(modifier = Modifier.height(32.dp))
-            }
+        }
+        
+        item {
+            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }
@@ -159,7 +157,8 @@ fun HomeScreen(
 @Composable
 private fun HeaderSection(
     userName: String? = null,
-    userPhotoUri: String? = null
+    userPhotoUri: String? = null,
+    onSettingsClick: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val greeting = remember {
@@ -174,48 +173,71 @@ private fun HeaderSection(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(20.dp),
+            .padding(horizontal = 20.dp, vertical = 16.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Column {
+        Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = if (userName != null) "$greeting," else greeting,
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
-                text = userName ?: "Minhas Finanças",
+                text = userName ?: "Bem-vindo!",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
             )
         }
         
-        Surface(
-            shape = CircleShape,
-            color = MaterialTheme.colorScheme.primaryContainer,
-            modifier = Modifier.size(48.dp)
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            if (userPhotoUri != null) {
-                AsyncImage(
-                    model = ImageRequest.Builder(context)
-                        .data(Uri.parse(userPhotoUri))
-                        .crossfade(true)
-                        .build(),
-                    contentDescription = "Foto de perfil",
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .clip(CircleShape),
-                    contentScale = ContentScale.Crop
+            // Botão de notificações (futuro)
+            IconButton(
+                onClick = { /* TODO: Notificações */ },
+                colors = IconButtonDefaults.iconButtonColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
                 )
-            } else {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = Icons.Default.Person,
-                        contentDescription = "Perfil",
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Notifications,
+                    contentDescription = "Notificações",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            
+            // Avatar do usuário
+            Surface(
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.primaryContainer,
+                modifier = Modifier
+                    .size(44.dp)
+                    .clickable(onClick = onSettingsClick)
+            ) {
+                if (userPhotoUri != null) {
+                    AsyncImage(
+                        model = ImageRequest.Builder(context)
+                            .data(Uri.parse(userPhotoUri))
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = "Foto de perfil",
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(CircleShape),
+                        contentScale = ContentScale.Crop
                     )
+                } else {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = "Perfil",
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
                 }
             }
         }
@@ -340,12 +362,13 @@ private fun QuickActionsSection(
         QuickAction("Config.", Icons.Outlined.Settings, onNavigateToConfiguracoes)
     )
     
-    LazyRow(
-        modifier = Modifier.padding(vertical = 20.dp),
-        contentPadding = PaddingValues(horizontal = 20.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 20.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        items(actions) { action ->
+        actions.forEach { action ->
             QuickActionItem(
                 label = action.label,
                 icon = action.icon,

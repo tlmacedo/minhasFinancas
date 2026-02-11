@@ -155,6 +155,7 @@ fun LoginScreen(
                     )
                 )
             )
+            .systemBarsPadding() // ADICIONADO: Padding para status bar e navigation bar
     ) {
         Column(
             modifier = Modifier
@@ -163,7 +164,7 @@ fun LoginScreen(
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(60.dp))
+            Spacer(modifier = Modifier.height(40.dp)) // Reduzido de 60dp
             
             // Logo do App
             Surface(
@@ -405,8 +406,6 @@ fun LoginScreen(
                     }
                 }
             }
-            
-            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
