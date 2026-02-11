@@ -27,6 +27,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
 import br.com.tlmacedo.minhasfinancas.ui.components.common.AnimatedCurrency
 import br.com.tlmacedo.minhasfinancas.ui.components.ContaIcons
@@ -51,10 +52,9 @@ fun HomeScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .systemBarsPadding(), // Garante o espaçamento das barras do sistema
+            .systemBarsPadding(),
         contentPadding = PaddingValues(bottom = 24.dp)
     ) {
-        // Header com saudação
         item {
             HeaderSection(
                 userName = uiState.currentUser?.nome?.split(" ")?.firstOrNull(),
@@ -63,7 +63,6 @@ fun HomeScreen(
             )
         }
         
-        // Card de saldo principal
         item {
             BalanceCard(
                 saldoTotal = uiState.saldoTotal,
@@ -72,7 +71,6 @@ fun HomeScreen(
             )
         }
         
-        // Ações rápidas
         item {
             QuickActionsSection(
                 onNavigateToContas = onNavigateToContas,
@@ -83,7 +81,6 @@ fun HomeScreen(
             )
         }
         
-        // Minhas Contas
         item {
             SectionHeader(
                 title = "Minhas Contas",
@@ -118,7 +115,6 @@ fun HomeScreen(
             }
         }
         
-        // Últimas transações
         item {
             SectionHeader(
                 title = "Últimas Transações",
@@ -195,9 +191,8 @@ private fun HeaderSection(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Botão de notificações (futuro)
             IconButton(
-                onClick = { /* TODO: Notificações */ },
+                onClick = { /* Notificações */ },
                 colors = IconButtonDefaults.iconButtonColors(
                     containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
                 )
@@ -209,7 +204,6 @@ private fun HeaderSection(
                 )
             }
             
-            // Avatar do usuário
             Surface(
                 shape = CircleShape,
                 color = MaterialTheme.colorScheme.primaryContainer,
@@ -217,17 +211,32 @@ private fun HeaderSection(
                     .size(44.dp)
                     .clickable(onClick = onSettingsClick)
             ) {
-                if (userPhotoUri != null) {
-                    AsyncImage(
+                if (!userPhotoUri.isNullOrBlank()) {
+                    SubcomposeAsyncImage(
                         model = ImageRequest.Builder(context)
-                            .data(Uri.parse(userPhotoUri))
+                            .data(userPhotoUri)
                             .crossfade(true)
                             .build(),
                         contentDescription = "Foto de perfil",
                         modifier = Modifier
                             .fillMaxSize()
                             .clip(CircleShape),
-                        contentScale = ContentScale.Crop
+                        contentScale = ContentScale.Crop,
+                        loading = {
+                            CircularProgressIndicator(
+                                modifier = Modifier.padding(12.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        },
+                        error = {
+                            Icon(
+                                imageVector = Icons.Default.Person,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
                     )
                 } else {
                     Box(contentAlignment = Alignment.Center) {
@@ -291,7 +300,6 @@ private fun BalanceCard(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    // Receitas
                     Column {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
@@ -316,7 +324,6 @@ private fun BalanceCard(
                         )
                     }
                     
-                    // Despesas
                     Column(horizontalAlignment = Alignment.End) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
@@ -535,7 +542,6 @@ private fun TransacaoItem(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Ícone
             Box(
                 modifier = Modifier
                     .size(44.dp)
@@ -555,7 +561,6 @@ private fun TransacaoItem(
             
             Spacer(modifier = Modifier.width(12.dp))
             
-            // Info
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = descricao,
@@ -570,7 +575,6 @@ private fun TransacaoItem(
                 )
             }
             
-            // Valor
             Text(
                 text = (if (isReceita) "+ " else "- ") + 
                     NumberFormat.getCurrencyInstance(Locale("pt", "BR")).format(valor),
