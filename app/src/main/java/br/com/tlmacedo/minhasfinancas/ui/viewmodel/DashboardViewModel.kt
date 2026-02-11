@@ -2,8 +2,10 @@ package br.com.tlmacedo.minhasfinancas.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import br.com.tlmacedo.minhasfinancas.auth.AuthManager
 import br.com.tlmacedo.minhasfinancas.data.local.dao.ContaComTipo
 import br.com.tlmacedo.minhasfinancas.data.local.dao.EventoCompleto
+import br.com.tlmacedo.minhasfinancas.data.local.entity.Usuario
 import br.com.tlmacedo.minhasfinancas.data.repository.ContaRepository
 import br.com.tlmacedo.minhasfinancas.data.repository.EventoRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -18,6 +20,7 @@ data class DashboardUiState(
     val despesasMes: Double = 0.0,
     val contas: List<ContaComTipo> = emptyList(),
     val ultimosEventos: List<EventoCompleto> = emptyList(),
+    val currentUser: Usuario? = null,
     val isLoading: Boolean = true,
     val error: String? = null
 )
@@ -25,7 +28,8 @@ data class DashboardUiState(
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
     private val contaRepository: ContaRepository,
-    private val eventoRepository: EventoRepository
+    private val eventoRepository: EventoRepository,
+    private val authManager: AuthManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DashboardUiState())
@@ -33,6 +37,15 @@ class DashboardViewModel @Inject constructor(
 
     init {
         loadDashboardData()
+        observeCurrentUser()
+    }
+
+    private fun observeCurrentUser() {
+        viewModelScope.launch {
+            authManager.currentUser.collect { user ->
+                _uiState.update { it.copy(currentUser = user) }
+            }
+        }
     }
 
     private fun loadDashboardData() {
@@ -63,14 +76,12 @@ class DashboardViewModel @Inject constructor(
         val (inicio, fim) = getMonthRange()
         
         viewModelScope.launch {
-            // Receitas do mês
             eventoRepository.getReceitasPeriodo(inicio, fim).collect { receitas ->
                 _uiState.update { it.copy(receitasMes = receitas) }
             }
         }
         
         viewModelScope.launch {
-            // Despesas do mês
             eventoRepository.getDespesasPeriodo(inicio, fim).collect { despesas ->
                 _uiState.update { it.copy(despesasMes = despesas) }
             }
@@ -80,7 +91,7 @@ class DashboardViewModel @Inject constructor(
     private fun loadUltimosEventos() {
         viewModelScope.launch {
             eventoRepository.getAllEventosCompletos()
-                .map { eventos -> eventos.take(5) } // Pegar apenas os 5 últimos
+                .map { eventos -> eventos.take(5) }
                 .collect { eventos ->
                     _uiState.update { it.copy(ultimosEventos = eventos) }
                 }

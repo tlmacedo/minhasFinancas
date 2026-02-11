@@ -1,3 +1,5 @@
+gitignore
+# Android Studio / IntelliJ
 *.iml
 .gradle
 /local.properties
@@ -7,9 +9,27 @@
 /.idea/workspace.xml
 /.idea/navEditor.xml
 /.idea/assetWizardSettings.xml
+.idea/shelf/
+
+# VS Code
+.vscode/
+
+# Sistema
 .DS_Store
-/build
 /captures
+
+# Compilação
+/build
+/*/build
 .externalNativeBuild
 .cxx
-local.properties
+.kotlin/
+
+# Chaves de Assinatura (Segurança Máxima)
+*.jks
+*.keystore
+*.p12
+*.google_play_keys
+
+# Google Services (se for usar Firebase no futuro)
+google-services.json

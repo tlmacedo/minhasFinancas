@@ -1,5 +1,6 @@
 package br.com.tlmacedo.minhasfinancas.ui.screens
 
+import android.net.Uri
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -20,9 +21,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import br.com.tlmacedo.minhasfinancas.ui.components.common.AnimatedCurrency
 import br.com.tlmacedo.minhasfinancas.ui.components.ContaIcons
 import br.com.tlmacedo.minhasfinancas.ui.theme.*
@@ -53,7 +58,10 @@ fun HomeScreen(
         ) {
             // Header com saudação
             item {
-                HeaderSection()
+                HeaderSection(
+                    userName = uiState.currentUser?.nome?.split(" ")?.firstOrNull(),
+                    userPhotoUri = uiState.currentUser?.fotoPerfilUri
+                )
             }
             
             // Card de saldo principal
@@ -149,7 +157,11 @@ fun HomeScreen(
 }
 
 @Composable
-private fun HeaderSection() {
+private fun HeaderSection(
+    userName: String? = null,
+    userPhotoUri: String? = null
+) {
+    val context = LocalContext.current
     val greeting = remember {
         val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
         when {
@@ -168,12 +180,12 @@ private fun HeaderSection() {
     ) {
         Column {
             Text(
-                text = greeting,
+                text = if (userName != null) "$greeting," else greeting,
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
-                text = "Minhas Finanças",
+                text = userName ?: "Minhas Finanças",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
@@ -185,12 +197,26 @@ private fun HeaderSection() {
             color = MaterialTheme.colorScheme.primaryContainer,
             modifier = Modifier.size(48.dp)
         ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = "Perfil",
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+            if (userPhotoUri != null) {
+                AsyncImage(
+                    model = ImageRequest.Builder(context)
+                        .data(Uri.parse(userPhotoUri))
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = "Foto de perfil",
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(CircleShape),
+                    contentScale = ContentScale.Crop
                 )
+            } else {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = "Perfil",
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
             }
         }
     }
