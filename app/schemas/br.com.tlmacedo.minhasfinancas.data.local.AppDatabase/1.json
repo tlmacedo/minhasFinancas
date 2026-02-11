@@ -1,0 +1,332 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "5ef48fb82565613cb06f5f8bc5ba8344",
+    "entities": [
+      {
+        "tableName": "contas",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `nome` TEXT NOT NULL, `tipoContaId` INTEGER NOT NULL, `saldoInicial` REAL NOT NULL, `saldoAtual` REAL NOT NULL, `cor` TEXT, `icone` TEXT, `incluirNoTotal` INTEGER NOT NULL, `ativa` INTEGER NOT NULL, `dataCriacao` INTEGER NOT NULL, FOREIGN KEY(`tipoContaId`) REFERENCES `tipos_conta`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "nome",
+            "columnName": "nome",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "tipoContaId",
+            "columnName": "tipoContaId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "saldoInicial",
+            "columnName": "saldoInicial",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "saldoAtual",
+            "columnName": "saldoAtual",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cor",
+            "columnName": "cor",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "icone",
+            "columnName": "icone",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "incluirNoTotal",
+            "columnName": "incluirNoTotal",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ativa",
+            "columnName": "ativa",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dataCriacao",
+            "columnName": "dataCriacao",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_contas_tipoContaId",
+            "unique": false,
+            "columnNames": [
+              "tipoContaId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_contas_tipoContaId` ON `${TABLE_NAME}` (`tipoContaId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "tipos_conta",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "tipoContaId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "tipos_conta",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `nome` TEXT NOT NULL, `descricao` TEXT, `ativo` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "nome",
+            "columnName": "nome",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "descricao",
+            "columnName": "descricao",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "ativo",
+            "columnName": "ativo",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "eventos",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `descricao` TEXT NOT NULL, `valor` REAL NOT NULL, `tipo` TEXT NOT NULL, `data` INTEGER NOT NULL, `contaId` INTEGER NOT NULL, `categoriaId` INTEGER, `observacao` TEXT, `efetivado` INTEGER NOT NULL, `dataCriacao` INTEGER NOT NULL, FOREIGN KEY(`contaId`) REFERENCES `contas`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`categoriaId`) REFERENCES `categorias`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "descricao",
+            "columnName": "descricao",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "valor",
+            "columnName": "valor",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "tipo",
+            "columnName": "tipo",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "data",
+            "columnName": "data",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "contaId",
+            "columnName": "contaId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "categoriaId",
+            "columnName": "categoriaId",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "observacao",
+            "columnName": "observacao",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "efetivado",
+            "columnName": "efetivado",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dataCriacao",
+            "columnName": "dataCriacao",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_eventos_contaId",
+            "unique": false,
+            "columnNames": [
+              "contaId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_eventos_contaId` ON `${TABLE_NAME}` (`contaId`)"
+          },
+          {
+            "name": "index_eventos_categoriaId",
+            "unique": false,
+            "columnNames": [
+              "categoriaId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_eventos_categoriaId` ON `${TABLE_NAME}` (`categoriaId`)"
+          },
+          {
+            "name": "index_eventos_data",
+            "unique": false,
+            "columnNames": [
+              "data"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_eventos_data` ON `${TABLE_NAME}` (`data`)"
+          },
+          {
+            "name": "index_eventos_tipo",
+            "unique": false,
+            "columnNames": [
+              "tipo"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_eventos_tipo` ON `${TABLE_NAME}` (`tipo`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "contas",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "contaId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "categorias",
+            "onDelete": "SET NULL",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "categoriaId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "categorias",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `nome` TEXT NOT NULL, `tipo` TEXT NOT NULL, `icone` TEXT, `cor` TEXT, `ativa` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "nome",
+            "columnName": "nome",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "tipo",
+            "columnName": "tipo",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "icone",
+            "columnName": "icone",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "cor",
+            "columnName": "cor",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "ativa",
+            "columnName": "ativa",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      }
+    ],
+    "views": [],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '5ef48fb82565613cb06f5f8bc5ba8344')"
+    ]
+  }
+}

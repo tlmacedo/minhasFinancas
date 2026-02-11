@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    
+    <!-- Gradiente de fundo verde -->
+    <path
+        android:pathData="M0,0h108v108h-108z"
+        android:fillColor="#10B981"/>
+    
+    <!-- Padrão decorativo sutil -->
+    <path
+        android:pathData="M0,54 Q27,40 54,54 Q81,68 108,54"
+        android:strokeColor="#059669"
+        android:strokeWidth="40"
+        android:strokeAlpha="0.3"
+        android:fillColor="#00000000"/>
+    
+    <path
+        android:pathData="M0,80 Q27,66 54,80 Q81,94 108,80"
+        android:strokeColor="#047857"
+        android:strokeWidth="30"
+        android:strokeAlpha="0.2"
+        android:fillColor="#00000000"/>
+</vector>
