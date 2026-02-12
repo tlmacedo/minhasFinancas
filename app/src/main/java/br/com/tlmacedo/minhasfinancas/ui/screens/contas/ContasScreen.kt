@@ -31,6 +31,19 @@ import br.com.tlmacedo.minhasfinancas.ui.viewmodel.ContasViewModel
 import java.text.NumberFormat
 import java.util.Locale
 
+/**
+ * Tela principal para visualização e gerenciamento de contas financeiras.
+ * 
+ * Esta tela exibe o saldo total, uma lista de contas cadastradas e um 
+ * botão de ação flutuante para adicionar novas contas. Ela é a porta de 
+ * entrada para edição e visualização de detalhes de cada conta.
+ * 
+ * @param onNavigateToAddConta Callback para navegar para a tela de criação de conta.
+ * @param onNavigateToEditConta Callback para navegar para a tela de edição de conta.
+ * @param onNavigateToContaTransacoes Callback para navegar para a lista de transações da conta.
+ * @param onNavigateBack Callback para retornar à tela anterior.
+ * @param viewModel ViewModel que fornece o estado e a lógica de negócio para esta tela.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ContasScreen(
@@ -76,6 +89,7 @@ fun ContasScreen(
         )
     }
     
+    // Limpa o erro da UI assim que ele é exibido
     uiState.error?.let { _ ->
         LaunchedEffect(Unit) {
             viewModel.clearError()
@@ -83,6 +97,12 @@ fun ContasScreen(
     }
 }
 
+/**
+ * Componente que exibe o corpo principal da tela de contas.
+ * 
+ * Contém a lógica para exibir um indicador de progresso, uma lista de contas
+ * ou uma mensagem de estado vazio.
+ */
 @Composable
 private fun ContasContent(
     uiState: ContasUiState,
@@ -106,6 +126,7 @@ private fun ContasContent(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        // Card com a soma de todos os saldos
         item {
             SaldoTotalCard(saldoTotal = uiState.saldoTotal)
         }
@@ -120,6 +141,7 @@ private fun ContasContent(
             )
         }
         
+        // Exibe a lista ou a mensagem de estado vazio
         if (uiState.contas.isEmpty()) {
             item {
                 EmptyContasCard()
@@ -127,7 +149,7 @@ private fun ContasContent(
         } else {
             items(
                 items = uiState.contas,
-                key = { it.conta.id }
+                key = { it.conta.id } // Chave para performance e estabilidade
             ) { contaComTipo ->
                 ContaCard(
                     contaComTipo = contaComTipo,
@@ -138,12 +160,17 @@ private fun ContasContent(
             }
         }
         
+        // Espaço no final da lista para não ser obstruído pelo FAB
         item {
             Spacer(modifier = Modifier.height(80.dp))
         }
     }
 }
 
+/**
+ * Card que exibe o saldo consolidado de todas as contas que o usuário
+ * optou por incluir no total.
+ */
 @Composable
 private fun SaldoTotalCard(saldoTotal: Double) {
     val currencyFormat = remember { 
@@ -175,9 +202,7 @@ private fun SaldoTotalCard(saldoTotal: Double) {
                 else
                     MaterialTheme.colorScheme.onErrorContainer
             )
-            
             Spacer(modifier = Modifier.height(8.dp))
-            
             Text(
                 text = currencyFormat.format(saldoTotal),
                 style = MaterialTheme.typography.headlineLarge,
@@ -191,6 +216,10 @@ private fun SaldoTotalCard(saldoTotal: Double) {
     }
 }
 
+/**
+ * Card que representa visualmente uma única conta na lista.
+ * Exibe ícone, nome, tipo, saldo e ações de edição/exclusão.
+ */
 @Composable
 private fun ContaCard(
     contaComTipo: ContaComTipo,
@@ -206,6 +235,7 @@ private fun ContaCard(
     
     var showDeleteDialog by remember { mutableStateOf(false) }
     
+    // Tenta converter a cor da conta, usando uma cor padrão em caso de falha
     val corConta = remember(conta.cor) {
         try {
             conta.cor?.let { Color(android.graphics.Color.parseColor(it)) }
@@ -231,7 +261,7 @@ private fun ContaCard(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Ícone - priorizar banco se existir
+            // Exibe o logo do banco se disponível, caso contrário exibe um ícone genérico
             if (banco != null) {
                 BancoIcon(
                     bancoId = conta.bancoId,
@@ -257,6 +287,7 @@ private fun ContaCard(
             
             Spacer(modifier = Modifier.width(16.dp))
             
+            // Informações da conta
             Column(
                 modifier = Modifier.weight(1f)
             ) {
@@ -267,15 +298,12 @@ private fun ContaCard(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                
                 Text(
                     text = if (banco != null) "${tipoConta.nome} • ${banco.nome}" else tipoConta.nome,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                
                 Spacer(modifier = Modifier.height(4.dp))
-                
                 Text(
                     text = currencyFormat.format(conta.saldoAtual),
                     style = MaterialTheme.typography.titleMedium,
@@ -287,6 +315,7 @@ private fun ContaCard(
                 )
             }
             
+            // Ações
             Column {
                 IconButton(
                     onClick = onEdit,
@@ -299,7 +328,6 @@ private fun ContaCard(
                         modifier = Modifier.size(20.dp)
                     )
                 }
-                
                 IconButton(
                     onClick = { showDeleteDialog = true },
                     modifier = Modifier.size(36.dp)
@@ -314,6 +342,7 @@ private fun ContaCard(
             }
         }
         
+        // Indicador se a conta está incluída no saldo total
         if (conta.incluirNoTotal) {
             Row(
                 modifier = Modifier
@@ -338,6 +367,7 @@ private fun ContaCard(
         }
     }
     
+    // Diálogo de confirmação para exclusão
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
@@ -368,6 +398,10 @@ private fun ContaCard(
     }
 }
 
+/**
+ * Card exibido quando a lista de contas está vazia, guiando o usuário
+ * a criar sua primeira conta.
+ */
 @Composable
 private fun EmptyContasCard() {
     Card(
@@ -389,15 +423,12 @@ private fun EmptyContasCard() {
                 modifier = Modifier.size(64.dp),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            
             Spacer(modifier = Modifier.height(16.dp))
-            
             Text(
                 text = "Nenhuma conta cadastrada",
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            
             Text(
                 text = "Toque no botão + para adicionar sua primeira conta",
                 style = MaterialTheme.typography.bodyMedium,

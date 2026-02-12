@@ -15,6 +15,15 @@ import javax.inject.Inject
 
 private const val TAG = "ContasViewModel"
 
+/**
+ * Representa o estado da UI para a tela de listagem de contas.
+ * 
+ * @property contas Lista de contas enriquecidas com seus respectivos tipos.
+ * @property tiposConta Lista de tipos de conta disponíveis para seleção.
+ * @property saldoTotal Soma do saldo de todas as contas configuradas para exibição.
+ * @property isLoading Indica se os dados ainda estão sendo carregados.
+ * @property error Mensagem de erro caso ocorra falha na recuperação dos dados.
+ */
 data class ContasUiState(
     val contas: List<ContaComTipo> = emptyList(),
     val tiposConta: List<TipoConta> = emptyList(),
@@ -23,11 +32,14 @@ data class ContasUiState(
     val error: String? = null
 )
 
+/**
+ * Representa o estado dos dados no formulário de criação/edição de conta.
+ */
 data class ContaFormState(
     val id: Long = 0,
     val nome: String = "",
     val tipoContaId: Long? = null,
-    val saldoInicial: Long = 0,
+    val saldoInicial: Long = 0, // Armazenado em centavos para precisão no TextField
     val cor: String = "#4CAF50",
     val icone: String? = "account_balance_wallet",
     val bancoId: String? = null,
@@ -38,6 +50,12 @@ data class ContaFormState(
     val error: String? = null
 )
 
+/**
+ * ViewModel responsável pela lógica de negócio das Contas Financeiras.
+ * 
+ * Gerencia o ciclo de vida dos dados de contas, desde a listagem reativa (Flow)
+ * até a persistência de novas contas ou atualizações.
+ */
 @HiltViewModel
 class ContasViewModel @Inject constructor(
     private val contaRepository: ContaRepository,
@@ -45,9 +63,11 @@ class ContasViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ContasUiState())
+    /** Estado observável para a tela de lista de contas */
     val uiState: StateFlow<ContasUiState> = _uiState.asStateFlow()
 
     private val _formState = MutableStateFlow(ContaFormState())
+    /** Estado observável para o formulário de conta */
     val formState: StateFlow<ContaFormState> = _formState.asStateFlow()
 
     init {
@@ -55,6 +75,10 @@ class ContasViewModel @Inject constructor(
         loadTiposConta()
     }
 
+    /** 
+     * Inicia a coleta reativa das contas do banco de dados.
+     * Atualiza automaticamente a UI e recalcula o saldo total sempre que houver mudança.
+     */
     private fun loadContas() {
         viewModelScope.launch {
             try {
@@ -70,11 +94,13 @@ class ContasViewModel @Inject constructor(
         }
     }
 
+    /** Carrega os tipos de conta cadastrados para popular seletores na UI */
     private fun loadTiposConta() {
         viewModelScope.launch {
             try {
                 tipoContaRepository.getAllTiposConta().collect { tipos ->
                     _uiState.update { it.copy(tiposConta = tipos, isLoading = false) }
+                    // Define o primeiro tipo como padrão se nenhum estiver selecionado
                     if (_formState.value.tipoContaId == null && tipos.isNotEmpty()) {
                         _formState.update { it.copy(tipoContaId = tipos.first().id) }
                     }
@@ -84,6 +110,8 @@ class ContasViewModel @Inject constructor(
             }
         }
     }
+
+    // --- Métodos de Atualização de Campos do Formulário ---
 
     fun updateNome(nome: String) {
         _formState.update { it.copy(nome = nome, error = null) }
@@ -109,6 +137,7 @@ class ContasViewModel @Inject constructor(
         _formState.update { it.copy(bancoId = bancoId, icone = null, usarIconeBanco = true) }
     }
 
+    /** Alterna entre usar um ícone genérico ou a logo de um banco específico */
     fun setUsarIconeBanco(usar: Boolean) {
         _formState.update { state ->
             if (usar) state.copy(usarIconeBanco = true, icone = null)
@@ -120,11 +149,16 @@ class ContasViewModel @Inject constructor(
         _formState.update { it.copy(incluirNoTotal = incluir) }
     }
 
+    /** Reseta o formulário para o estado inicial de criação */
     fun resetForm() {
         val primeiroTipo = _uiState.value.tiposConta.firstOrNull()?.id
         _formState.value = ContaFormState(tipoContaId = primeiroTipo)
     }
 
+    /** 
+     * Carrega os dados de uma conta específica para edição.
+     * @param contaId ID da conta a ser carregada.
+     */
     fun loadContaForEdit(contaId: Long) {
         viewModelScope.launch {
             _formState.update { it.copy(isLoading = true) }
@@ -152,8 +186,13 @@ class ContasViewModel @Inject constructor(
         }
     }
 
+    /** 
+     * Persiste os dados do formulário no banco de dados.
+     * Realiza a inserção se for uma nova conta ou atualização se já existir.
+     */
     fun saveConta() {
         val form = _formState.value
+        // Validação básica
         if (form.nome.isBlank() || form.tipoContaId == null) {
             _formState.update { it.copy(error = "Preencha os campos obrigatórios") }
             return
@@ -168,6 +207,7 @@ class ContasViewModel @Inject constructor(
                     nome = form.nome.trim(),
                     tipoContaId = form.tipoContaId,
                     saldoInicial = saldoEmReais,
+                    // Se for edição, mantém o saldo atual. Se for nova, usa o saldo inicial.
                     saldoAtual = if (form.id == 0L) saldoEmReais else {
                         contaRepository.getContaById(form.id)?.saldoAtual ?: saldoEmReais
                     },
@@ -184,12 +224,14 @@ class ContasViewModel @Inject constructor(
         }
     }
 
+    /** Exclui uma conta permanentemente pelo ID */
     fun deleteConta(contaId: Long) {
         viewModelScope.launch {
             try { contaRepository.deleteContaById(contaId) } catch (e: Exception) { _uiState.update { it.copy(error = e.message) } }
         }
     }
 
+    /** Limpa os estados de erro da UI */
     fun clearError() {
         _uiState.update { it.copy(error = null) }
         _formState.update { it.copy(error = null) }

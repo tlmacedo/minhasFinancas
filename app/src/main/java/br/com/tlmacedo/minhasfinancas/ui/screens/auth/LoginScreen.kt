@@ -48,6 +48,15 @@ import br.com.tlmacedo.minhasfinancas.auth.AuthState
 import br.com.tlmacedo.minhasfinancas.auth.BiometricStatus
 import br.com.tlmacedo.minhasfinancas.ui.viewmodel.AuthViewModel
 
+/**
+ * Tela de login da aplicação.
+ * 
+ * Oferece suporte a autenticação por e-mail/senha e autenticação biométrica.
+ * Implementa recursos modernos como Autofill do sistema Android para facilitar a entrada de dados.
+ * 
+ * @param onNavigateToRegister Callback para navegação para a tela de registro de novo usuário.
+ * @param viewModel ViewModel que gerencia o estado e a lógica de autenticação.
+ */
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun LoginScreen(
@@ -68,7 +77,8 @@ fun LoginScreen(
     
     val isBiometricAvailable = biometricStatus == BiometricStatus.Available
     
-    // Nós de autofill
+    // --- Configuração de Autofill (Preenchimento Automático) ---
+    
     val emailAutofillNode = remember {
         AutofillNode(
             autofillTypes = listOf(AutofillType.EmailAddress),
@@ -83,16 +93,14 @@ fun LoginScreen(
         )
     }
     
-    // Registrar nós no autofill tree
     LaunchedEffect(Unit) {
         autofillTree += emailAutofillNode
         autofillTree += passwordAutofillNode
     }
     
-    // Commitar autofill quando login for bem sucedido
+    // Notifica o sistema que o preenchimento foi bem-sucedido após o login
     LaunchedEffect(authState) {
         if (authState is AuthState.Authenticated) {
-            // Notificar o AutofillManager do sistema
             val activity = context as? Activity
             activity?.let {
                 val autofillManager = it.getSystemService(AutofillManager::class.java)
@@ -101,7 +109,9 @@ fun LoginScreen(
         }
     }
     
-    // Função para mostrar biometria
+    // --- Lógica de Autenticação Biométrica ---
+
+    /** Exibe o prompt de biometria do sistema */
     fun showBiometricPrompt() {
         val activity = context as? FragmentActivity ?: return
         val userId = lastLoggedUserId ?: return
@@ -116,14 +126,6 @@ fun LoginScreen(
                     super.onAuthenticationSucceeded(result)
                     viewModel.loginWithBiometric(userId)
                 }
-                
-                override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
-                    super.onAuthenticationError(errorCode, errString)
-                }
-                
-                override fun onAuthenticationFailed() {
-                    super.onAuthenticationFailed()
-                }
             }
         )
         
@@ -136,13 +138,15 @@ fun LoginScreen(
         biometricPrompt.authenticate(promptInfo)
     }
     
-    // Tentar biometria automaticamente se disponível
+    // Tenta acionar a biometria automaticamente ao abrir a tela se o usuário já logou antes
     LaunchedEffect(isBiometricAvailable, lastLoggedUserId) {
         if (isBiometricAvailable && lastLoggedUserId != null) {
             showBiometricPrompt()
         }
     }
     
+    // --- Layout da UI ---
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -155,7 +159,7 @@ fun LoginScreen(
                     )
                 )
             )
-            .systemBarsPadding() // ADICIONADO: Padding para status bar e navigation bar
+            .systemBarsPadding() 
     ) {
         Column(
             modifier = Modifier
@@ -164,19 +168,16 @@ fun LoginScreen(
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(40.dp)) // Reduzido de 60dp
+            Spacer(modifier = Modifier.height(40.dp))
             
-            // Logo do App
+            // Logo do Aplicativo
             Surface(
                 modifier = Modifier.size(120.dp),
                 shape = RoundedCornerShape(28.dp),
                 color = MaterialTheme.colorScheme.primaryContainer,
                 shadowElevation = 8.dp
             ) {
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier.fillMaxSize()
-                ) {
+                Box(contentAlignment = Alignment.Center) {
                     Image(
                         painter = painterResource(id = R.drawable.ic_splash_icon),
                         contentDescription = "Logo do App",
@@ -202,13 +203,11 @@ fun LoginScreen(
             
             Spacer(modifier = Modifier.height(48.dp))
             
-            // Formulário
+            // Card do Formulário de Login
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                ),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
             ) {
                 Column(
@@ -224,136 +223,86 @@ fun LoginScreen(
                     
                     Spacer(modifier = Modifier.height(8.dp))
                     
-                    // Email com Autofill
+                    // Campo de E-mail com suporte a Autofill
                     OutlinedTextField(
                         value = loginForm.email,
                         onValueChange = { viewModel.updateLoginEmail(it) },
                         label = { Text("Email") },
-                        leadingIcon = {
-                            Icon(Icons.Outlined.Email, contentDescription = null)
-                        },
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Email,
-                            imeAction = ImeAction.Next
-                        ),
-                        keyboardActions = KeyboardActions(
-                            onNext = { focusManager.moveFocus(FocusDirection.Down) }
-                        ),
+                        leadingIcon = { Icon(Icons.Outlined.Email, contentDescription = null) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
+                        keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
                         singleLine = true,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .onGloballyPositioned { coordinates ->
-                                emailAutofillNode.boundingBox = coordinates.boundsInWindow()
-                            }
+                            .onGloballyPositioned { coordinates -> emailAutofillNode.boundingBox = coordinates.boundsInWindow() }
                             .onFocusChanged { focusState ->
-                                if (focusState.isFocused) {
-                                    autofill?.requestAutofillForNode(emailAutofillNode)
-                                } else {
-                                    autofill?.cancelAutofillForNode(emailAutofillNode)
-                                }
+                                if (focusState.isFocused) autofill?.requestAutofillForNode(emailAutofillNode)
+                                else autofill?.cancelAutofillForNode(emailAutofillNode)
                             }
-                            .semantics {
-                                contentDescription = "Campo de email para login"
-                            },
+                            .semantics { contentDescription = "Campo de email para login" },
                         shape = RoundedCornerShape(12.dp)
                     )
                     
-                    // Senha com Autofill
+                    // Campo de Senha com suporte a Autofill
                     OutlinedTextField(
                         value = loginForm.senha,
                         onValueChange = { viewModel.updateLoginSenha(it) },
                         label = { Text("Senha") },
-                        leadingIcon = {
-                            Icon(Icons.Outlined.Lock, contentDescription = null)
-                        },
+                        leadingIcon = { Icon(Icons.Outlined.Lock, contentDescription = null) },
                         trailingIcon = {
                             IconButton(onClick = { showPassword = !showPassword }) {
                                 Icon(
-                                    imageVector = if (showPassword) 
-                                        Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
-                                    contentDescription = if (showPassword) 
-                                        "Ocultar senha" else "Mostrar senha"
+                                    imageVector = if (showPassword) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
+                                    contentDescription = if (showPassword) "Ocultar senha" else "Mostrar senha"
                                 )
                             }
                         },
-                        visualTransformation = if (showPassword) 
-                            VisualTransformation.None else PasswordVisualTransformation(),
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Password,
-                            imeAction = ImeAction.Done
-                        ),
-                        keyboardActions = KeyboardActions(
-                            onDone = { 
-                                focusManager.clearFocus()
-                                viewModel.loginWithPassword()
-                            }
-                        ),
+                        visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(onDone = { 
+                            focusManager.clearFocus()
+                            viewModel.loginWithPassword()
+                        }),
                         singleLine = true,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .onGloballyPositioned { coordinates ->
-                                passwordAutofillNode.boundingBox = coordinates.boundsInWindow()
-                            }
+                            .onGloballyPositioned { coordinates -> passwordAutofillNode.boundingBox = coordinates.boundsInWindow() }
                             .onFocusChanged { focusState ->
-                                if (focusState.isFocused) {
-                                    autofill?.requestAutofillForNode(passwordAutofillNode)
-                                } else {
-                                    autofill?.cancelAutofillForNode(passwordAutofillNode)
-                                }
+                                if (focusState.isFocused) autofill?.requestAutofillForNode(passwordAutofillNode)
+                                else autofill?.cancelAutofillForNode(passwordAutofillNode)
                             }
-                            .semantics {
-                                contentDescription = "Campo de senha para login"
-                            },
+                            .semantics { contentDescription = "Campo de senha para login" },
                         shape = RoundedCornerShape(12.dp)
                     )
                     
-                    // Mensagem de erro
+                    // Mensagem de Erro Animada
                     AnimatedVisibility(visible = loginForm.error != null) {
                         Card(
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.errorContainer
-                            ),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
                             shape = RoundedCornerShape(8.dp)
                         ) {
                             Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(12.dp),
+                                modifier = Modifier.fillMaxWidth().padding(12.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Icon(
-                                    imageVector = Icons.Default.Error,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.error,
-                                    modifier = Modifier.size(20.dp)
-                                )
+                                Icon(Icons.Default.Error, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(20.dp))
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = loginForm.error ?: "",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onErrorContainer
-                                )
+                                Text(text = loginForm.error ?: "", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onErrorContainer)
                             }
                         }
                     }
                     
                     Spacer(modifier = Modifier.height(8.dp))
                     
-                    // Botão de login
+                    // Botão principal de Login
                     Button(
                         onClick = { viewModel.loginWithPassword() },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp),
+                        modifier = Modifier.fillMaxWidth().height(56.dp),
                         enabled = !loginForm.isLoading,
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         if (loginForm.isLoading) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(24.dp),
-                                color = MaterialTheme.colorScheme.onPrimary,
-                                strokeWidth = 2.dp
-                            )
+                            CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary, strokeWidth = 2.dp)
                         } else {
                             Icon(Icons.Default.Login, contentDescription = null)
                             Spacer(modifier = Modifier.width(8.dp))
@@ -361,23 +310,14 @@ fun LoginScreen(
                         }
                     }
                     
-                    // Biometria
+                    // Botão secundário de Biometria (Exibido apenas se disponível e houver usuário prévio)
                     if (isBiometricAvailable && lastLoggedUserId != null) {
                         OutlinedButton(
                             onClick = { showBiometricPrompt() },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(56.dp),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.outlinedButtonColors(
-                                contentColor = MaterialTheme.colorScheme.primary
-                            )
+                            modifier = Modifier.fillMaxWidth().height(56.dp),
+                            shape = RoundedCornerShape(12.dp)
                         ) {
-                            Icon(
-                                Icons.Default.Fingerprint, 
-                                contentDescription = null,
-                                modifier = Modifier.size(24.dp)
-                            )
+                            Icon(Icons.Default.Fingerprint, contentDescription = null, modifier = Modifier.size(24.dp))
                             Spacer(modifier = Modifier.width(8.dp))
                             Text("Usar biometria", style = MaterialTheme.typography.titleMedium)
                         }
@@ -387,22 +327,15 @@ fun LoginScreen(
             
             Spacer(modifier = Modifier.weight(1f))
             
-            // Link para registro (apenas se permitido)
+            // Link para Cadastro
             if (viewModel.canCreateUsers()) {
                 Row(
                     modifier = Modifier.padding(vertical = 16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "Não tem uma conta?",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Text(text = "Não tem uma conta?", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     TextButton(onClick = onNavigateToRegister) {
-                        Text(
-                            "Criar conta",
-                            fontWeight = FontWeight.SemiBold
-                        )
+                        Text("Criar conta", fontWeight = FontWeight.SemiBold)
                     }
                 }
             }

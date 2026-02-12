@@ -16,9 +16,13 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+// Configuração do DataStore para persistir preferências de autenticação
 private val Context.dataStore by preferencesDataStore(name = "auth_prefs")
 private val LAST_USER_ID_KEY = longPreferencesKey("last_user_id")
 
+/**
+ * Estado que representa os dados do formulário de Login.
+ */
 data class LoginFormState(
     val email: String = "",
     val senha: String = "",
@@ -26,6 +30,9 @@ data class LoginFormState(
     val error: String? = null
 )
 
+/**
+ * Estado que representa os dados do formulário de Registro de Usuário.
+ */
 data class RegisterFormState(
     val nome: String = "",
     val email: String = "",
@@ -38,25 +45,38 @@ data class RegisterFormState(
     val isSuccess: Boolean = false
 )
 
+/**
+ * ViewModel responsável pela lógica de autenticação e gestão de usuários.
+ * 
+ * Atua como intermediário entre a UI e o [AuthManager], controlando os estados
+ * de login, registro e a verificação de biometria.
+ */
 @HiltViewModel
 class AuthViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val authManager: AuthManager
 ) : ViewModel() {
 
+    /** Observa o estado global de autenticação (Autenticado, Precisa de Login, etc) */
     val authState: StateFlow<AuthState> = authManager.authState
+    
+    /** Observa os dados do usuário atualmente logado */
     val currentUser: StateFlow<Usuario?> = authManager.currentUser
     
     private val _loginForm = MutableStateFlow(LoginFormState())
+    /** Estado público do formulário de login */
     val loginForm: StateFlow<LoginFormState> = _loginForm.asStateFlow()
     
     private val _registerForm = MutableStateFlow(RegisterFormState())
+    /** Estado público do formulário de registro */
     val registerForm: StateFlow<RegisterFormState> = _registerForm.asStateFlow()
     
     private val _biometricStatus = MutableStateFlow<BiometricStatus>(BiometricStatus.NotAvailable)
+    /** Status da disponibilidade de hardware biométrico no dispositivo */
     val biometricStatus: StateFlow<BiometricStatus> = _biometricStatus.asStateFlow()
     
     private val _lastLoggedUserId = MutableStateFlow<Long?>(null)
+    /** ID do último usuário que realizou login com sucesso, usado para facilitar login biométrico */
     val lastLoggedUserId: StateFlow<Long?> = _lastLoggedUserId.asStateFlow()
 
     init {
@@ -65,16 +85,19 @@ class AuthViewModel @Inject constructor(
         loadLastLoggedUserId()
     }
 
+    /** Verifica o estado inicial da aplicação (se há usuários cadastrados ou sessão ativa) */
     private fun checkInitialState() {
         viewModelScope.launch {
             authManager.checkInitialState()
         }
     }
 
+    /** Consulta o hardware do sistema para verificar suporte a biometria */
     private fun checkBiometricStatus() {
         _biometricStatus.value = authManager.checkBiometricStatus()
     }
     
+    /** Carrega o ID do último usuário do armazenamento persistente (DataStore) */
     private fun loadLastLoggedUserId() {
         viewModelScope.launch {
             context.dataStore.data.collect { prefs ->
@@ -83,13 +106,15 @@ class AuthViewModel @Inject constructor(
         }
     }
     
+    /** Salva o ID do usuário após um login bem-sucedido */
     private suspend fun saveLastLoggedUserId(userId: Long) {
         context.dataStore.edit { prefs ->
             prefs[LAST_USER_ID_KEY] = userId
         }
     }
 
-    // Login Form
+    // --- Métodos de Atualização do Formulário de Login ---
+
     fun updateLoginEmail(email: String) {
         _loginForm.update { it.copy(email = email, error = null) }
     }
@@ -98,6 +123,10 @@ class AuthViewModel @Inject constructor(
         _loginForm.update { it.copy(senha = senha, error = null) }
     }
 
+    /** 
+     * Executa o processo de login utilizando e-mail e senha.
+     * Valida campos obrigatórios antes de chamar o [AuthManager].
+     */
     fun loginWithPassword() {
         val form = _loginForm.value
         
@@ -131,6 +160,7 @@ class AuthViewModel @Inject constructor(
         }
     }
 
+    /** Realiza o login utilizando a autenticação biométrica do sistema */
     fun loginWithBiometric(usuarioId: Long) {
         viewModelScope.launch {
             _loginForm.update { it.copy(isLoading = true) }
@@ -150,9 +180,11 @@ class AuthViewModel @Inject constructor(
         }
     }
 
+    /** Retorna a instância do [AuthManager] para uso em diálogos de autenticação na UI */
     fun getAuthManager(): AuthManager = authManager
 
-    // Register Form
+    // --- Métodos de Atualização do Formulário de Registro ---
+
     fun updateRegisterNome(nome: String) {
         _registerForm.update { it.copy(nome = nome, error = null) }
     }
@@ -177,10 +209,14 @@ class AuthViewModel @Inject constructor(
         _registerForm.update { it.copy(fotoUri = uri) }
     }
 
+    /**
+     * Realiza o cadastro de um novo usuário.
+     * Inclui validações de formato de e-mail, força de senha e confirmação de senha.
+     */
     fun register() {
         val form = _registerForm.value
         
-        // Validações
+        // Validações de entrada
         if (form.nome.isBlank()) {
             _registerForm.update { it.copy(error = "Nome é obrigatório") }
             return
@@ -224,7 +260,7 @@ class AuthViewModel @Inject constructor(
                 onSuccess = { usuario ->
                     saveLastLoggedUserId(usuario.id)
                     _registerForm.update { it.copy(isLoading = false, isSuccess = true) }
-                    // Auto-login após registro
+                    // Realiza o login automático após o registro bem-sucedido
                     authManager.loginWithPassword(form.email, form.senha)
                 },
                 onFailure = { error ->
@@ -236,25 +272,31 @@ class AuthViewModel @Inject constructor(
         }
     }
 
+    /** Reinicia o estado do formulário de registro */
     fun resetRegisterForm() {
         _registerForm.value = RegisterFormState()
     }
 
+    /** Reinicia o estado do formulário de login */
     fun resetLoginForm() {
         _loginForm.value = LoginFormState()
     }
 
+    /** Encerra a sessão do usuário atual */
     fun logout() {
         authManager.logout()
         resetLoginForm()
     }
 
+    /** Verifica se a política atual permite a criação de novos usuários */
     fun canCreateUsers(): Boolean = authManager.canCreateUsers()
     
+    /** Limpa mensagens de erro de login da UI */
     fun clearLoginError() {
         _loginForm.update { it.copy(error = null) }
     }
     
+    /** Limpa mensagens de erro de registro da UI */
     fun clearRegisterError() {
         _registerForm.update { it.copy(error = null) }
     }

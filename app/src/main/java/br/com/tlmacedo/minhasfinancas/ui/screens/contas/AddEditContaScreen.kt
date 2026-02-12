@@ -27,6 +27,16 @@ import br.com.tlmacedo.minhasfinancas.ui.components.IconSelector
 import br.com.tlmacedo.minhasfinancas.ui.components.MoneyTextField
 import br.com.tlmacedo.minhasfinancas.ui.viewmodel.ContasViewModel
 
+/**
+ * Tela de formulário para adicionar uma nova conta ou editar uma existente.
+ * 
+ * Centraliza a lógica de entrada de dados como nome, tipo de conta, saldo inicial,
+ * identificação visual (cores e ícones) e preferências de exibição.
+ * 
+ * @param contaId ID da conta para edição. Se nulo ou <= 0, a tela entra em modo de criação.
+ * @param onNavigateBack Callback para retornar à tela anterior após salvar ou cancelar.
+ * @param viewModel ViewModel que gerencia o estado do formulário e a persistência.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddEditContaScreen(
@@ -38,10 +48,12 @@ fun AddEditContaScreen(
     val uiState by viewModel.uiState.collectAsState()
     val isEditing = contaId != null && contaId > 0
     
+    // Inicializa o formulário dependendo do modo (Criação ou Edição)
     LaunchedEffect(contaId) {
         if (isEditing) viewModel.loadContaForEdit(contaId!!) else viewModel.resetForm()
     }
     
+    // Observa se a gravação foi concluída com sucesso para fechar a tela
     LaunchedEffect(formState.isSaved) {
         if (formState.isSaved) onNavigateBack()
     }
@@ -80,6 +92,7 @@ fun AddEditContaScreen(
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
+                // Campo: Nome da Conta
                 OutlinedTextField(
                     value = formState.nome,
                     onValueChange = { viewModel.updateNome(it) },
@@ -90,12 +103,14 @@ fun AddEditContaScreen(
                     shape = RoundedCornerShape(12.dp)
                 )
                 
+                // Seletor: Tipo de Conta (Corrente, Poupança, etc)
                 TipoContaSelector(
                     tiposConta = uiState.tiposConta,
                     selectedId = formState.tipoContaId,
                     onSelect = { viewModel.updateTipoConta(it) }
                 )
                 
+                // Campo: Saldo Inicial (Apenas na criação)
                 if (!isEditing) {
                     MoneyTextField(
                         value = formState.saldoInicial,
@@ -105,7 +120,7 @@ fun AddEditContaScreen(
                     )
                 }
 
-                // --- SELETOR UNIFICADO DE ÍCONE ---
+                // Seção: Identificação Visual (Ícone/Banco)
                 Column {
                     Text(
                         text = "Identificação Visual",
@@ -135,6 +150,7 @@ fun AddEditContaScreen(
                     
                     Spacer(modifier = Modifier.height(16.dp))
                     
+                    // Alterna entre seletor de bancos ou seletor de ícones genéricos
                     if (formState.usarIconeBanco) {
                         BancoSelector(
                             selectedBancoId = formState.bancoId,
@@ -149,12 +165,13 @@ fun AddEditContaScreen(
                     }
                 }
                 
+                // Seletor: Cor da Conta
                 ColorSelector(
                     selectedColor = formState.cor,
                     onColorSelect = { viewModel.updateCor(it) }
                 )
                 
-                // Incluir no Total
+                // Preferência: Incluir no Saldo Total
                 Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth().clickable { viewModel.updateIncluirNoTotal(!formState.incluirNoTotal) }.padding(16.dp),
@@ -170,10 +187,12 @@ fun AddEditContaScreen(
                     }
                 }
                 
+                // Exibição de erros de validação/persistência
                 if (formState.error != null) {
                     Text(text = formState.error!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
                 }
                 
+                // Botão de Ação: Salvar
                 Button(
                     onClick = { viewModel.saveConta() },
                     modifier = Modifier.fillMaxWidth().height(56.dp),
@@ -192,6 +211,9 @@ fun AddEditContaScreen(
     }
 }
 
+/**
+ * Componente de seleção horizontal para o Tipo de Conta.
+ */
 @Composable
 private fun TipoContaSelector(tiposConta: List<br.com.tlmacedo.minhasfinancas.data.local.entity.TipoConta>, selectedId: Long?, onSelect: (Long) -> Unit) {
     Column {
@@ -211,6 +233,9 @@ private fun TipoContaSelector(tiposConta: List<br.com.tlmacedo.minhasfinancas.da
     }
 }
 
+/**
+ * Componente de seleção de cores pré-definidas para a conta.
+ */
 @Composable
 private fun ColorSelector(selectedColor: String, onColorSelect: (String) -> Unit) {
     val cores = listOf("#4CAF50", "#2196F3", "#9C27B0", "#FF9800", "#F44336", "#00BCD4", "#E91E63", "#607D8B", "#795548", "#3F51B5")

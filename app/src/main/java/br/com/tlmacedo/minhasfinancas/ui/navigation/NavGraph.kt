@@ -23,6 +23,12 @@ import br.com.tlmacedo.minhasfinancas.ui.screens.contas.AddEditContaScreen
 import br.com.tlmacedo.minhasfinancas.ui.screens.contas.ContasScreen
 import br.com.tlmacedo.minhasfinancas.ui.viewmodel.AuthViewModel
 
+/**
+ * Definição de rotas da aplicação.
+ * 
+ * Esta classe selada centraliza todas as strings de rota utilizadas pelo NavHost,
+ * garantindo consistência e facilitando a manutenção da navegação.
+ */
 sealed class Screen(val route: String) {
     object Login : Screen("login")
     object Register : Screen("register")
@@ -30,9 +36,11 @@ sealed class Screen(val route: String) {
     object Contas : Screen("contas")
     object AddConta : Screen("contas/add")
     object EditConta : Screen("contas/edit/{contaId}") {
+        /** Cria a rota dinâmica para edição de uma conta específica */
         fun createRoute(contaId: Long) = "contas/edit/$contaId"
     }
     object ContaTransacoes : Screen("contas/{contaId}/transacoes") {
+        /** Cria a rota dinâmica para visualizar transações de uma conta específica */
         fun createRoute(contaId: Long) = "contas/$contaId/transacoes"
     }
     object Eventos : Screen("eventos")
@@ -42,6 +50,15 @@ sealed class Screen(val route: String) {
     object Configuracoes : Screen("configuracoes")
 }
 
+/**
+ * Componente principal de navegação (NavHost).
+ * 
+ * Responsável por orquestrar a transição entre telas, gerenciar o backstack
+ * e observar o estado de autenticação para proteger rotas privadas.
+ * 
+ * @param navController Controlador de navegação do Compose.
+ * @param authViewModel ViewModel responsável pelo estado de autenticação.
+ */
 @Composable
 fun NavGraph(
     navController: NavHostController,
@@ -57,15 +74,17 @@ fun NavGraph(
         else -> Screen.Login.route
     }
     
-    // Observar mudanças de estado para navegação
+    // Efeito colateral para reagir a mudanças no estado de autenticação global
     LaunchedEffect(authState) {
         when (authState) {
             is AuthState.Authenticated -> {
+                // Ao autenticar, limpa o histórico e vai para a Home
                 navController.navigate(Screen.Home.route) {
                     popUpTo(0) { inclusive = true }
                 }
             }
             AuthState.NeedLogin -> {
+                // Redireciona para login se necessário, evitando loops
                 if (navController.currentDestination?.route != Screen.Login.route &&
                     navController.currentDestination?.route != Screen.Register.route) {
                     navController.navigate(Screen.Login.route) {
@@ -81,7 +100,8 @@ fun NavGraph(
         navController = navController,
         startDestination = startDestination
     ) {
-        // Auth
+        // --- Fluxo de Autenticação ---
+        
         composable(Screen.Login.route) {
             LoginScreen(
                 onNavigateToRegister = { navController.navigate(Screen.Register.route) },
@@ -96,7 +116,8 @@ fun NavGraph(
             )
         }
         
-        // Main
+        // --- Fluxo Principal do App ---
+        
         composable(Screen.Home.route) {
             HomeScreen(
                 onNavigateToContas = { navController.navigate(Screen.Contas.route) },
@@ -150,6 +171,8 @@ fun NavGraph(
             )
         }
         
+        // --- Telas em Desenvolvimento (Placeholders) ---
+        
         composable(Screen.Eventos.route) {
             PlaceholderScreen(
                 title = "Transações", 
@@ -184,6 +207,13 @@ fun NavGraph(
     }
 }
 
+/**
+ * Tela de espaço reservado para funcionalidades ainda não implementadas.
+ * 
+ * @param title Título a ser exibido na TopBar.
+ * @param message Mensagem informativa no corpo da tela.
+ * @param onBack Callback para ação de retorno.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PlaceholderScreen(
