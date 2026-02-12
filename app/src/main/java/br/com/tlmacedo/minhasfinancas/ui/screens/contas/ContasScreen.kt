@@ -23,6 +23,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import br.com.tlmacedo.minhasfinancas.data.local.dao.ContaComTipo
+import br.com.tlmacedo.minhasfinancas.data.model.BancosData
+import br.com.tlmacedo.minhasfinancas.ui.components.BancoIcon
 import br.com.tlmacedo.minhasfinancas.ui.components.ContaIcons
 import br.com.tlmacedo.minhasfinancas.ui.viewmodel.ContasUiState
 import br.com.tlmacedo.minhasfinancas.ui.viewmodel.ContasViewModel
@@ -34,7 +36,7 @@ import java.util.Locale
 fun ContasScreen(
     onNavigateToAddConta: () -> Unit,
     onNavigateToEditConta: (Long) -> Unit,
-    onNavigateToContaTransacoes: (Long) -> Unit = {}, // Nova navegação
+    onNavigateToContaTransacoes: (Long) -> Unit = {},
     onNavigateBack: () -> Unit = {},
     viewModel: ContasViewModel = hiltViewModel()
 ) {
@@ -67,16 +69,15 @@ fun ContasScreen(
     ) { paddingValues ->
         ContasContent(
             uiState = uiState,
-            onContaClick = onNavigateToContaTransacoes, // Agora vai para transações
-            onEditConta = onNavigateToEditConta,       // Botão editar
+            onContaClick = onNavigateToContaTransacoes,
+            onEditConta = onNavigateToEditConta,
             onDeleteConta = { viewModel.deleteConta(it) },
             modifier = Modifier.padding(paddingValues)
         )
     }
     
-    // Snackbar de erro
-    uiState.error?.let { error ->
-        LaunchedEffect(error) {
+    uiState.error?.let { _ ->
+        LaunchedEffect(Unit) {
             viewModel.clearError()
         }
     }
@@ -105,7 +106,6 @@ private fun ContasContent(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // Card de Saldo Total
         item {
             SaldoTotalCard(saldoTotal = uiState.saldoTotal)
         }
@@ -138,7 +138,6 @@ private fun ContasContent(
             }
         }
         
-        // Espaço extra para o FAB
         item {
             Spacer(modifier = Modifier.height(80.dp))
         }
@@ -216,6 +215,8 @@ private fun ContaCard(
         }
     }
     
+    val banco = conta.bancoId?.let { BancosData.getBancoById(it) }
+    
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -230,25 +231,32 @@ private fun ContaCard(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Ícone colorido
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape)
-                    .background(corConta.copy(alpha = 0.15f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = ContaIcons.getIcon(conta.icone),
-                    contentDescription = null,
-                    tint = corConta,
-                    modifier = Modifier.size(24.dp)
+            // Ícone - priorizar banco se existir
+            if (banco != null) {
+                BancoIcon(
+                    bancoId = conta.bancoId,
+                    size = 48,
+                    showBackground = true
                 )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(corConta.copy(alpha = 0.15f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = ContaIcons.getIcon(conta.icone),
+                        contentDescription = null,
+                        tint = corConta,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
             }
             
             Spacer(modifier = Modifier.width(16.dp))
             
-            // Info da conta
             Column(
                 modifier = Modifier.weight(1f)
             ) {
@@ -261,7 +269,7 @@ private fun ContaCard(
                 )
                 
                 Text(
-                    text = tipoConta.nome,
+                    text = if (banco != null) "${tipoConta.nome} • ${banco.nome}" else tipoConta.nome,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -279,9 +287,7 @@ private fun ContaCard(
                 )
             }
             
-            // Botões de ação
             Column {
-                // Botão editar
                 IconButton(
                     onClick = onEdit,
                     modifier = Modifier.size(36.dp)
@@ -294,7 +300,6 @@ private fun ContaCard(
                     )
                 }
                 
-                // Botão excluir
                 IconButton(
                     onClick = { showDeleteDialog = true },
                     modifier = Modifier.size(36.dp)
@@ -309,7 +314,6 @@ private fun ContaCard(
             }
         }
         
-        // Tag "No total"
         if (conta.incluirNoTotal) {
             Row(
                 modifier = Modifier
@@ -334,7 +338,6 @@ private fun ContaCard(
         }
     }
     
-    // Dialog de confirmação
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },

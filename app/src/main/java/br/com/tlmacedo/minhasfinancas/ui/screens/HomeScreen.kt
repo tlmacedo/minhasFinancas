@@ -30,6 +30,7 @@ import coil.compose.AsyncImage
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
 import br.com.tlmacedo.minhasfinancas.ui.components.common.AnimatedCurrency
+import br.com.tlmacedo.minhasfinancas.ui.components.common.BancoIcon
 import br.com.tlmacedo.minhasfinancas.ui.components.ContaIcons
 import br.com.tlmacedo.minhasfinancas.ui.theme.*
 import br.com.tlmacedo.minhasfinancas.ui.viewmodel.DashboardViewModel
@@ -107,6 +108,7 @@ fun HomeScreen(
                             nome = contaComTipo.conta.nome,
                             saldo = contaComTipo.conta.saldoAtual,
                             icone = contaComTipo.conta.icone,
+                            bancoId = contaComTipo.conta.bancoId,
                             cor = contaComTipo.conta.cor,
                             onClick = onNavigateToContas
                         )
@@ -458,6 +460,7 @@ private fun MiniContaCard(
     nome: String,
     saldo: Double,
     icone: String?,
+    bancoId: String?,
     cor: String?,
     onClick: () -> Unit
 ) {
@@ -481,19 +484,26 @@ private fun MiniContaCard(
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .background(contaCor.copy(alpha = 0.2f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = ContaIcons.getIcon(icone),
-                    contentDescription = null,
-                    tint = contaCor,
-                    modifier = Modifier.size(20.dp)
+            if (!bancoId.isNullOrBlank()) {
+                BancoIcon(
+                    bancoId = bancoId,
+                    size = 40
                 )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(contaCor.copy(alpha = 0.2f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = ContaIcons.getIcon(icone),
+                        contentDescription = null,
+                        tint = contaCor,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             }
             
             Spacer(modifier = Modifier.height(12.dp))

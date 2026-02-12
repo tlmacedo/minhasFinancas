@@ -8,6 +8,7 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import br.com.tlmacedo.minhasfinancas.data.local.AppDatabase
 import br.com.tlmacedo.minhasfinancas.data.local.dao.*
+import br.com.tlmacedo.minhasfinancas.data.local.migration.MIGRATION_2_3
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -48,7 +49,7 @@ object DatabaseModule {
             AppDatabase::class.java,
             "minhas_financas.db"
         )
-            .addMigrations(MIGRATION_1_2)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
             .addCallback(object : RoomDatabase.Callback() {
                 override fun onCreate(db: SupportSQLiteDatabase) {
                     super.onCreate(db)

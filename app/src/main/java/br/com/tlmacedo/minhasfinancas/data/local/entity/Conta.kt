@@ -26,6 +26,7 @@ data class Conta(
     val saldoAtual: Double = 0.0,
     val cor: String? = "#4CAF50",
     val icone: String? = "account_balance_wallet",
+    val bancoId: String? = null, // ID do banco para ícone (ex: "nubank", "itau", "bb")
     val incluirNoTotal: Boolean = true,
     val ativa: Boolean = true,
     val dataCriacao: Long = System.currentTimeMillis()

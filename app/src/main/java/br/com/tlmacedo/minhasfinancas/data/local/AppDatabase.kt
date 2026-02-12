@@ -15,7 +15,7 @@ import br.com.tlmacedo.minhasfinancas.data.local.entity.*
         Categoria::class,
         Usuario::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
